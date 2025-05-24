@@ -52,6 +52,40 @@ def retry(max_retries=3):
         return wrapper
     return decorator
 
+import inspect
+
+def typecheck(func):
+    sig = inspect.signature(func)
+    def wrapper(*args, **kwargs):
+        bound = sig.bind(*args, **kwargs)
+        for name, val in bound.arguments.items():
+            expected = sig.parameters[name].annotation
+            if expected is not inspect._empty and not isinstance(val, expected):
+                raise TypeError(f"Argument '{name}' must be {expected}, got {type(val)}")
+        return func(*args, **kwargs)
+    return wrapper
+
+def wait(duration=5):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            time.sleep(duration)
+            return result
+        return wrapper
+    return decorator
+
+def deprecated(reason):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            warnings.warn(
+                f"{func.__name__} is deprecated: {reason}",
+                DeprecationWarning,
+                stacklevel=2
+            )
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 if __name__ == "__main__":
     # Example usage of decorators
 
